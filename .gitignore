@@ -1,0 +1,6 @@
+node_modules/
+.env
+.DS_Store
+dist/
+backend/gmail/credentials.json
+backend/gmail/token.json

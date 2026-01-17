@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Vendor {
+  id            String     @id @default(uuid())
+  name          String
+  email         String     @unique
+  contactPerson String?
+  phone         String?
+  address       String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  rfpVendors    RFPVendor[]
+  proposals     Proposal[]
+}
+
+model RFP {
+  id            String     @id @default(uuid())
+  title         String
+  rawInput      String
+  description   String?
+  budget        Float?
+  currency      String     @default("USD")
+  deliveryDays  Int?
+  paymentTerms  String?
+  warrantyMonths Int?
+  status        RFPStatus  @default(DRAFT)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  items         RFPItem[]
+  rfpVendors    RFPVendor[]
+  proposals     Proposal[]
+}
+
+model RFPItem {
+  id             String   @id @default(uuid())
+  rfpId          String
+  rfp            RFP      @relation(fields: [rfpId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  quantity       Int
+  specifications Json?
+  createdAt      DateTime @default(now())
+}
+
+model RFPVendor {
+  id        String       @id @default(uuid())
+  rfpId     String
+  rfp       RFP          @relation(fields: [rfpId], references: [id], onDelete: Cascade)
+  vendorId  String
+  vendor    Vendor       @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  sentAt    DateTime?
+  status    SendStatus   @default(PENDING)
+  
+  @@unique([rfpId, vendorId])
+}
+
+model Proposal {
+  id           String   @id @default(uuid())
+  rfpId        String
+  rfp          RFP      @relation(fields: [rfpId], references: [id], onDelete: Cascade)
+  vendorId     String
+  vendor       Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  rawEmail     String
+  rawSubject   String?
+  parsedData   Json?
+  totalPrice   Float?
+  unitPrices   Json?
+  deliveryDays Int?
+  warranty     String?
+  paymentTerms String?
+  aiScore      Float?
+  aiSummary    String?
+  aiStrengths  Json?
+  aiWeaknesses Json?
+  receivedAt   DateTime @default(now())
+  
+  @@unique([rfpId, vendorId])
+}
+
+enum RFPStatus {
+  DRAFT
+  SENT
+  EVALUATING
+  AWARDED
+  CLOSED
+}
+
+enum SendStatus {
+  PENDING
+  SENT
+  FAILED
+}
